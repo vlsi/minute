@@ -9,16 +9,16 @@
 /* Begin PBXBuildFile section */
 		0E0A182A0E8F4C1792A8B075 /* MinuteLlama in Frameworks */ = {isa = PBXBuildFile; productRef = B730481B2E3B4E5FB8E38D6E /* MinuteLlama */; };
 		13E6D74F51A2432B8FB8B1A1 /* MinuteOllama in Frameworks */ = {isa = PBXBuildFile; productRef = 13E6D74E51A2432B8FB8B1A1 /* MinuteOllama */; };
-		24A1B2C3D4E5F60718293A4B /* MinuteLMStudio in Frameworks */ = {isa = PBXBuildFile; productRef = 24A1B2C3D4E5F60718293A4A /* MinuteLMStudio */; };
-		5E70A0010000000000000002 /* MinuteSherpaONNX in Frameworks */ = {isa = PBXBuildFile; productRef = 5E70A0010000000000000001 /* MinuteSherpaONNX */; };
 		1A2B3C4D5E6F7890ABCDEF12 /* StageDropValidationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E7D1B0A9B34B87B2E6A123 /* StageDropValidationTests.swift */; };
 		1DBD0C88C2F54CA78D084F61 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 3B3599BC65E149678727D1B7 /* Sparkle */; settings = {ATTRIBUTES = (Weak, ); }; };
+		24A1B2C3D4E5F60718293A4B /* MinuteLMStudio in Frameworks */ = {isa = PBXBuildFile; productRef = 24A1B2C3D4E5F60718293A4A /* MinuteLMStudio */; };
 		2D3E4F5A6B7C8D9E0F1A2B3C /* MeetingTypesSettingsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E4F5A6B7C8D9E0F1A2B3C4D /* MeetingTypesSettingsViewModelTests.swift */; };
 		58B6950C2EF600000068FAA7 /* MinuteCore in Frameworks */ = {isa = PBXBuildFile; productRef = 58B6950B2EF600000068FAA7 /* MinuteCore */; };
 		5A7F52052F1F0D0A00D8E124 /* WhisperXPCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A7F52022F1F0D0A00D8E124 /* WhisperXPCService.swift */; };
 		5A7F52062F1F0D0A00D8E124 /* MinuteWhisperService.xpc in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5A7F52012F1F0D0A00D8E124 /* MinuteWhisperService.xpc */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		5A7F52072F1F0D0A00D8E124 /* MinuteWhisper in Frameworks */ = {isa = PBXBuildFile; productRef = 5A7F52132F1F0D0A00D8E124 /* MinuteWhisper */; };
 		5A7F52082F1F0D0A00D8E124 /* MinuteCore in Frameworks */ = {isa = PBXBuildFile; productRef = 58B6950B2EF600000068FAA7 /* MinuteCore */; };
+		5E70A0010000000000000002 /* MinuteSherpaONNX in Frameworks */ = {isa = PBXBuildFile; productRef = 5E70A0010000000000000001 /* MinuteSherpaONNX */; };
 		6C1A7B2E3D4F5A6B7C8D9E01 /* MeetingPipelineViewModelVocabularyOverrideTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D2B8C3F4E5A6B7C8D9E0F11 /* MeetingPipelineViewModelVocabularyOverrideTests.swift */; };
 		6C1A7B2E3D4F5A6B7C8D9E02 /* ModelsSettingsViewModelVocabularyBoostingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D2B8C3F4E5A6B7C8D9E0F12 /* ModelsSettingsViewModelVocabularyBoostingTests.swift */; };
 		6C1A7B2E3D4F5A6B7C8D9E03 /* ModelsSettingsViewModelVocabularyGatingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D2B8C3F4E5A6B7C8D9E0F13 /* ModelsSettingsViewModelVocabularyGatingTests.swift */; };
@@ -614,7 +614,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 31;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = 9U6KWJQQVG;
+				DEVELOPMENT_TEAM = 5DU76QP4SD;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -643,7 +643,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 0.22.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) $(MINUTE_SWIFT_DISTRIBUTION_FLAG)";
-				PRODUCT_BUNDLE_IDENTIFIER = com.roblibob.Minute;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.vlsi.Minute;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -674,7 +674,7 @@
 				CURRENT_PROJECT_VERSION = 31;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
-				"DEVELOPMENT_TEAM[sdk=macosx*]" = 9U6KWJQQVG;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = 5DU76QP4SD;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
@@ -709,7 +709,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 0.22.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) $(MINUTE_SWIFT_DISTRIBUTION_FLAG)";
-				PRODUCT_BUNDLE_IDENTIFIER = com.roblibob.Minute;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.vlsi.Minute;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
@@ -740,11 +740,12 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 5DU76QP4SD;
 				INFOPLIST_FILE = MinuteWhisperService/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MINUTE_WHISPER_SERVICE_ENTITLEMENTS = MinuteWhisperService/MinuteWhisperService.entitlements;
-				PRODUCT_BUNDLE_IDENTIFIER = com.roblibob.Minute.WhisperService;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.vlsi.Minute.WhisperService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -763,7 +764,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 9U6KWJQQVG;
-				"DEVELOPMENT_TEAM[sdk=macosx*]" = 9U6KWJQQVG;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = 5DU76QP4SD;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
@@ -775,7 +776,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MINUTE_WHISPER_SERVICE_ENTITLEMENTS = MinuteWhisperService/MinuteWhisperService.entitlements;
-				PRODUCT_BUNDLE_IDENTIFIER = com.roblibob.Minute.WhisperService;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.vlsi.Minute.WhisperService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
@@ -794,14 +795,14 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 9U6KWJQQVG;
+				DEVELOPMENT_TEAM = 5DU76QP4SD;
 				INFOPLIST_FILE = Config/MinuteInfo.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				PRODUCT_BUNDLE_IDENTIFIER = com.roblibob.MinuteTests;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.vlsi.MinuteTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 6.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Minute.app/Contents/MacOS/Minute";
@@ -813,14 +814,14 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 9U6KWJQQVG;
+				DEVELOPMENT_TEAM = 5DU76QP4SD;
 				INFOPLIST_FILE = Config/MinuteInfo.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				PRODUCT_BUNDLE_IDENTIFIER = com.roblibob.MinuteTests;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.vlsi.MinuteTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 6.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Minute.app/Contents/MacOS/Minute";
@@ -910,11 +911,6 @@
 			package = 58B6950A2EF600000068FAA7 /* XCLocalSwiftPackageReference "MinuteCore" */;
 			productName = MinuteLMStudio;
 		};
-		5E70A0010000000000000001 /* MinuteSherpaONNX */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 58B6950A2EF600000068FAA7 /* XCLocalSwiftPackageReference "MinuteCore" */;
-			productName = MinuteSherpaONNX;
-		};
 		3B3599BC65E149678727D1B7 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4953E618B8B349659E4195B9 /* XCRemoteSwiftPackageReference "Sparkle" */;
@@ -929,6 +925,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 58B6950A2EF600000068FAA7 /* XCLocalSwiftPackageReference "MinuteCore" */;
 			productName = MinuteWhisper;
+		};
+		5E70A0010000000000000001 /* MinuteSherpaONNX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 58B6950A2EF600000068FAA7 /* XCLocalSwiftPackageReference "MinuteCore" */;
+			productName = MinuteSherpaONNX;
 		};
 		B730481B2E3B4E5FB8E38D6E /* MinuteLlama */ = {
 			isa = XCSwiftPackageProductDependency;
