@@ -4,6 +4,7 @@ public enum ProcessingStage: String, Sendable {
     case downloadingModels
     case normalizingAudioLevels
     case transcribing
+    case diarizing
     case summarizing
 }
 
@@ -45,6 +46,8 @@ public enum MeetingPipelineState {
                 return "Normalizing Audio Levels"
             case .transcribing:
                 return "Transcribing"
+            case .diarizing:
+                return "Identifying speakers"
             case .summarizing:
                 return "Summarizing"
             }

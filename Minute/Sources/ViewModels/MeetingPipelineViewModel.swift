@@ -1954,6 +1954,10 @@ final class MeetingPipelineViewModel: ObservableObject {
             summarizationProgressDetail = nil
             transcriptionProgressDetail = makeStagePositionDetail(update)
             state = .processing(stage: .transcribing, context: context)
+        case .diarizing:
+            summarizationProgressDetail = nil
+            resetTranscriptionProgress()
+            state = .processing(stage: .diarizing, context: context)
         case .summarizing:
             summarizationProgressDetail = makeSummarizationProgressDetail(update)
             resetTranscriptionProgress()

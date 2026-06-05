@@ -72,6 +72,8 @@ struct PipelineStatusPresenter {
                 title = "Normalizing Audio Levels"
             case .transcribing:
                 title = "Transcribing"
+            case .diarizing:
+                title = "Identifying speakers"
             case .summarizing:
                 title = "Summarizing"
             case .writing:

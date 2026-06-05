@@ -323,6 +323,7 @@ public actor MeetingPipelineCoordinator {
                 ? context.workingDirectoryURL.appendingPathComponent("diarization-embeddings.json")
                 : nil
 
+            progress?(.diarizing(fractionCompleted: 0.9))
             let diarizationSegments = await diarizeIfPossible(
                 wavURL: context.analysisAudioURL,
                 embeddingExportURL: embeddingExportURL

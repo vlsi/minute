@@ -4,6 +4,7 @@ public enum PipelineStage: String, Sendable, Equatable {
     case downloadingModels
     case normalizingAudioLevels
     case transcribing
+    case diarizing
     case summarizing
     case writing
 }
@@ -61,6 +62,10 @@ public struct PipelineProgress: Sendable, Equatable {
             transcriptionProcessedSeconds: processedSeconds,
             transcriptionTotalSeconds: totalSeconds
         )
+    }
+
+    public static func diarizing(fractionCompleted: Double) -> PipelineProgress {
+        PipelineProgress(stage: .diarizing, fractionCompleted: fractionCompleted)
     }
 
     public static func normalizingAudioLevels(
