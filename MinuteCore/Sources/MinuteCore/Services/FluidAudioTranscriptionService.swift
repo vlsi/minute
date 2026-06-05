@@ -82,7 +82,8 @@ public struct FluidAudioTranscriptionService: VocabularyBoostingTranscriptionSer
                     logger.debug("FluidAudio ASR padded short audio: samples=\(samples.count, privacy: .public)")
                 }
             }
-            let result = try await manager.transcribe(samples, source: configuration.audioSource)
+            var decoderState = TdtDecoderState.make(decoderLayers: await manager.decoderLayerCount)
+            let result = try await manager.transcribe(samples, decoderState: &decoderState)
             logger.debug(
                 "FluidAudio ASR result: textLength=\(result.text.count, privacy: .public) confidence=\(String(format: "%.3f", result.confidence), privacy: .public) duration=\(String(format: "%.2f", result.duration), privacy: .public) processing=\(String(format: "%.2f", result.processingTime), privacy: .public) tokenTimings=\(result.tokenTimings?.count ?? 0, privacy: .public)"
             )
@@ -288,6 +289,12 @@ private extension AsrModelVersion {
             return "v3"
         case .tdtCtc110m:
             return "tdtctc110m"
+        case .ctcZhCn:
+            return "ctczhcn"
+        case .tdtJa:
+            return "tdtja"
+        @unknown default:
+            return "unknown"
         }
     }
 }
