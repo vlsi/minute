@@ -1369,6 +1369,7 @@ final class MeetingPipelineViewModel: ObservableObject {
                 let stoppedAt = startedAt.addingTimeInterval(result.duration)
                 progress = nil
                 statusLabelOverride = nil
+                importedStorageAudio = result.originalAudioURL.map { (result.wavURL, $0) }
                 state = .recorded(
                     audioTempURL: result.wavURL,
                     durationSeconds: result.duration,
@@ -1409,6 +1410,7 @@ final class MeetingPipelineViewModel: ObservableObject {
     private func processIfAllowed() {
         guard !isPreparingPipelineContext else { return }
         guard case .recorded(let audioTempURL, let durationSeconds, let startedAt, let stoppedAt) = state else { return }
+        let storageAudioURL = importedStorageAudio.flatMap { $0.wavURL == audioTempURL ? $0.storageURL : nil }
 
         isPreparingPipelineContext = true
 
@@ -1421,6 +1423,7 @@ final class MeetingPipelineViewModel: ObservableObject {
             do {
                 context = try await makePipelineContext(
                     audioTempURL: audioTempURL,
+                    storageAudioURL: storageAudioURL,
                     audioDurationSeconds: durationSeconds,
                     startedAt: startedAt,
                     stoppedAt: stoppedAt,
@@ -2045,8 +2048,13 @@ final class MeetingPipelineViewModel: ObservableObject {
         return segments.joined(separator: " • ")
     }
 
+    /// Full-quality storage audio (.m4a) for an imported file, keyed by its analysis WAV
+    /// so it is only used for the meeting it belongs to.
+    private var importedStorageAudio: (wavURL: URL, storageURL: URL)?
+
     private func makePipelineContext(
         audioTempURL: URL,
+        storageAudioURL: URL? = nil,
         audioDurationSeconds: TimeInterval,
         startedAt: Date,
         stoppedAt: Date,
@@ -2103,11 +2111,13 @@ final class MeetingPipelineViewModel: ObservableObject {
                 transcriptsRoot: configuration.transcriptsRelativePath
             ),
             audioTempURL: audioTempURL,
+            storageAudioURL: storageAudioURL,
             audioDurationSeconds: audioDurationSeconds,
             startedAt: startedAt,
             stoppedAt: stoppedAt,
             workingDirectoryURL: workingDirectoryURL,
             saveAudio: configuration.saveAudio,
+            audioStorageFormat: configuration.audioStorageFormat,
             saveTranscript: configuration.saveTranscript,
             normalizeAnalysisAudio: configuration.normalizeAnalysisAudio,
             screenContextEvents: screenContextEvents,

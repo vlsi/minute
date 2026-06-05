@@ -9,6 +9,8 @@ struct VaultConfigurationView: View {
 
     @ObservedObject var model: VaultSettingsModel
     let style: Style
+    @AppStorage(AppConfiguration.Defaults.audioStorageFormatKey)
+    private var audioStorageFormatRaw: String = AppConfiguration.Defaults.defaultAudioStorageFormat.rawValue
 
     var body: some View {
         switch style {
@@ -81,13 +83,23 @@ struct VaultConfigurationView: View {
 
             SettingsFieldBlock(
                 title: "Audio folder",
-                subtitle: "Relative path for saved WAV files."
+                subtitle: "Relative path for saved audio files."
             ) {
                 SettingsSingleLineInput(
                     text: $model.audioRelativePath,
                     placeholder: AppConfiguration.Defaults.defaultAudioRelativePath
                 )
             }
+
+            SettingsMenuField(
+                title: "Audio format",
+                subtitle: "M4A (AAC) is much smaller; WAV is uncompressed.",
+                options: AudioStorageFormat.allCases,
+                selectionLabel: AudioStorageFormat.resolved(from: audioStorageFormatRaw).displayName,
+                optionLabel: { $0.displayName },
+                isSelected: { $0.rawValue == audioStorageFormatRaw },
+                onSelect: { audioStorageFormatRaw = $0.rawValue }
+            )
 
             SettingsFieldBlock(
                 title: "Transcript folder",

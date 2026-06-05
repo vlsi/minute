@@ -68,10 +68,22 @@ public actor DefaultMediaImportService: MediaImporting {
 
         logger.info("Imported media to WAV: \(wavURL.path, privacy: .public)")
 
+        // Full-quality copy for vault storage; the analysis WAV above is 16 kHz mono.
+        let storageAudioURL: URL?
+        let candidateStorageURL = tempRoot.appendingPathComponent("original.m4a")
+        do {
+            try await AudioFileEncoder.exportToM4A(sourceURL: sourceURL, outputURL: candidateStorageURL)
+            storageAudioURL = candidateStorageURL
+        } catch {
+            logger.error("Full-quality m4a export failed; vault will fall back to analysis audio: \(ErrorHandler.debugMessage(for: error), privacy: .public)")
+            storageAudioURL = nil
+        }
+
         return MediaImportResult(
             wavURL: wavURL,
             duration: duration,
-            suggestedStartDate: suggestedStartDate
+            suggestedStartDate: suggestedStartDate,
+            originalAudioURL: storageAudioURL
         )
     }
 

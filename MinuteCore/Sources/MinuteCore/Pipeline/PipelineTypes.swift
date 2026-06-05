@@ -226,11 +226,15 @@ public struct PipelineContext: Sendable {
     ///
     /// Defaults to `audioTempURL`, but may point to a normalized temporary WAV when enabled.
     public var analysisAudioURL: URL
+    /// Optional full-quality audio for vault storage (e.g. an imported file's `.m4a`).
+    /// When nil, the vault copy is derived from `audioTempURL` (the analysis audio).
+    public var storageAudioURL: URL?
     public var audioDurationSeconds: TimeInterval
     public var startedAt: Date
     public var stoppedAt: Date
     public var workingDirectoryURL: URL
     public var saveAudio: Bool
+    public var audioStorageFormat: AudioStorageFormat
     public var saveTranscript: Bool
     public var normalizeAnalysisAudio: Bool
     public var screenContextEvents: [ScreenContextEvent]
@@ -247,11 +251,13 @@ public struct PipelineContext: Sendable {
         vaultFolders: MeetingFileContract.VaultFolders,
         audioTempURL: URL,
         analysisAudioURL: URL? = nil,
+        storageAudioURL: URL? = nil,
         audioDurationSeconds: TimeInterval,
         startedAt: Date,
         stoppedAt: Date,
         workingDirectoryURL: URL,
         saveAudio: Bool,
+        audioStorageFormat: AudioStorageFormat = .wav,
         saveTranscript: Bool,
         normalizeAnalysisAudio: Bool = false,
         screenContextEvents: [ScreenContextEvent] = [],
@@ -267,11 +273,13 @@ public struct PipelineContext: Sendable {
         self.vaultFolders = vaultFolders
         self.audioTempURL = audioTempURL
         self.analysisAudioURL = analysisAudioURL ?? audioTempURL
+        self.storageAudioURL = storageAudioURL
         self.audioDurationSeconds = audioDurationSeconds
         self.startedAt = startedAt
         self.stoppedAt = stoppedAt
         self.workingDirectoryURL = workingDirectoryURL
         self.saveAudio = saveAudio
+        self.audioStorageFormat = audioStorageFormat
         self.saveTranscript = saveTranscript
         self.normalizeAnalysisAudio = normalizeAnalysisAudio
         self.screenContextEvents = screenContextEvents

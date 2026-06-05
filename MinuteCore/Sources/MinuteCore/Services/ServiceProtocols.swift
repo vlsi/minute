@@ -55,11 +55,15 @@ public struct MediaImportResult: Sendable, Equatable {
     public var wavURL: URL
     public var duration: TimeInterval
     public var suggestedStartDate: Date
+    /// Optional full-quality audio (an `.m4a` extracted from the source) for vault storage.
+    /// The `wavURL` is the 16 kHz mono analysis audio; this preserves the original quality.
+    public var originalAudioURL: URL?
 
-    public init(wavURL: URL, duration: TimeInterval, suggestedStartDate: Date) {
+    public init(wavURL: URL, duration: TimeInterval, suggestedStartDate: Date, originalAudioURL: URL? = nil) {
         self.wavURL = wavURL
         self.duration = duration
         self.suggestedStartDate = suggestedStartDate
+        self.originalAudioURL = originalAudioURL
     }
 }
 

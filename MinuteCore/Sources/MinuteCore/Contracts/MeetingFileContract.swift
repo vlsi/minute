@@ -41,13 +41,18 @@ public struct MeetingFileContract: Sendable {
         ].joined(separator: "/")
     }
 
-    public func audioRelativePath(date: Date, title: String, calendar: Calendar = .current) -> String {
+    public func audioRelativePath(
+        date: Date,
+        title: String,
+        format: AudioStorageFormat = .wav,
+        calendar: Calendar = .current
+    ) -> String {
         let d = Self.isoDateTimePrefix(date, calendar: calendar)
         let safeTitle = FilenameSanitizer.sanitizeTitle(title)
 
         return [
             folders.audioRoot,
-            "\(d) - \(safeTitle).wav",
+            "\(d) - \(safeTitle).\(format.fileExtension)",
         ].joined(separator: "/")
     }
 

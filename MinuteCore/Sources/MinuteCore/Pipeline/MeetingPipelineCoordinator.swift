@@ -277,7 +277,20 @@ public actor MeetingPipelineCoordinator {
             // This also decouples the vault write from the temp-file lifetime across async boundaries.
             let originalAudioData: Data?
             if context.saveAudio {
-                originalAudioData = try Data(contentsOf: context.audioTempURL)
+                switch context.audioStorageFormat {
+                case .wav:
+                    originalAudioData = try Data(contentsOf: context.audioTempURL)
+                case .m4a:
+                    if let storageAudioURL = context.storageAudioURL {
+                        // Import provides a full-quality .m4a; store it verbatim.
+                        originalAudioData = try Data(contentsOf: storageAudioURL)
+                    } else {
+                        originalAudioData = try await AudioFileEncoder.encodeToM4AData(
+                            sourceURL: context.audioTempURL,
+                            workingDirectoryURL: context.workingDirectoryURL
+                        )
+                    }
+                }
             } else {
                 originalAudioData = nil
             }
@@ -899,7 +912,7 @@ public actor MeetingPipelineCoordinator {
 
         let contract = MeetingFileContract(folders: context.vaultFolders)
         let noteRelativePath = contract.noteRelativePath(date: recordingDate, title: extraction.title)
-        let audioRelativePath = context.saveAudio ? contract.audioRelativePath(date: recordingDate, title: extraction.title) : nil
+        let audioRelativePath = context.saveAudio ? contract.audioRelativePath(date: recordingDate, title: extraction.title, format: context.audioStorageFormat) : nil
         let transcriptRelativePath = context.saveTranscript ? contract.transcriptRelativePath(date: recordingDate, title: extraction.title) : nil
 
         let transcriptData: Data?
@@ -1045,7 +1058,7 @@ public actor MeetingPipelineCoordinator {
         try vaultAccess.withVaultAccess { vaultRootURL in
             let contract = MeetingFileContract(folders: context.vaultFolders)
             let noteRelativePath = contract.noteRelativePath(date: context.startedAt, title: extraction.title)
-            let audioRelativePath = context.saveAudio ? contract.audioRelativePath(date: context.startedAt, title: extraction.title) : nil
+            let audioRelativePath = context.saveAudio ? contract.audioRelativePath(date: context.startedAt, title: extraction.title, format: context.audioStorageFormat) : nil
             let transcriptRelativePath = context.saveTranscript ? contract.transcriptRelativePath(date: context.startedAt, title: extraction.title) : nil
             let resolvedPaths = resolveOutputPaths(
                 vaultRootURL: vaultRootURL,
@@ -1341,7 +1354,8 @@ public actor MeetingPipelineCoordinator {
         }
 
         for case let candidateURL as URL in enumerator {
-            guard candidateURL.pathExtension.lowercased() == "wav" else { continue }
+            let candidateExtension = candidateURL.pathExtension.lowercased()
+            guard candidateExtension == "wav" || candidateExtension == "m4a" else { continue }
             guard candidateURL.deletingPathExtension().lastPathComponent == basename else { continue }
             return VaultPathNormalizer.relativePath(from: vaultRootURL, to: candidateURL)
         }

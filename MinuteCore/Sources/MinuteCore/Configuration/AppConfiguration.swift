@@ -8,6 +8,7 @@ public struct AppConfiguration: Sendable, Equatable {
         public static let audioRelativePathKey = "audioRelativePath"
         public static let transcriptsRelativePathKey = "transcriptsRelativePath"
         public static let saveAudioKey = "saveAudio"
+        public static let audioStorageFormatKey = "audioStorageFormat"
         public static let saveTranscriptKey = "saveTranscript"
         public static let normalizeAnalysisAudioKey = "normalizeAnalysisAudio"
         public static let screenContextEnabledKey = "screenContextEnabled"
@@ -48,6 +49,7 @@ public struct AppConfiguration: Sendable, Equatable {
         public static let defaultAudioRelativePath = "Meetings/_audio"
         public static let defaultTranscriptsRelativePath = "Meetings/_transcripts"
         public static let defaultSaveAudio = true
+        public static let defaultAudioStorageFormat = AudioStorageFormat.m4a
         public static let defaultSaveTranscript = true
         public static let defaultNormalizeAnalysisAudio = true
         public static let defaultScreenContextEnabled = false
@@ -79,6 +81,7 @@ public struct AppConfiguration: Sendable, Equatable {
     public var audioRelativePath: String
     public var transcriptsRelativePath: String
     public var saveAudio: Bool
+    public var audioStorageFormat: AudioStorageFormat
     public var saveTranscript: Bool
     public var normalizeAnalysisAudio: Bool
     public var screenContextEnabled: Bool
@@ -113,6 +116,7 @@ public struct AppConfiguration: Sendable, Equatable {
             fallback: Defaults.defaultTranscriptsRelativePath
         )
         saveAudio = defaults.object(forKey: Defaults.saveAudioKey) as? Bool ?? Defaults.defaultSaveAudio
+        audioStorageFormat = AudioStorageFormat.resolved(from: defaults.string(forKey: Defaults.audioStorageFormatKey))
         saveTranscript = defaults.object(forKey: Defaults.saveTranscriptKey) as? Bool ?? Defaults.defaultSaveTranscript
         normalizeAnalysisAudio = defaults.object(forKey: Defaults.normalizeAnalysisAudioKey) as? Bool
             ?? Defaults.defaultNormalizeAnalysisAudio
