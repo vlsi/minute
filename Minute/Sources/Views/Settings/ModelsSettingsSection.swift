@@ -33,6 +33,11 @@ struct ModelsSettingsSection: View {
                     if let message = model.vocabularyBoostingSupportMessage {
                         SettingsInlineMessage(text: message, tone: .warning)
                     }
+                } else if model.isGigaAMSelected {
+                    GigaAMModelPicker(
+                        models: model.gigaAMModels,
+                        selection: $model.selectedGigaAMModelID
+                    )
                 } else {
                     TranscriptionModelPicker(
                         models: model.transcriptionModels,

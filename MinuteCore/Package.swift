@@ -30,9 +30,15 @@ let package = Package(
             name: "MinuteLMStudio",
             targets: ["MinuteLMStudio"]
         ),
+        .library(
+            name: "MinuteSherpaONNX",
+            targets: ["MinuteSherpaONNX"]
+        ),
     ],
     dependencies: [
         .package(url: "https://github.com/FluidInference/FluidAudio.git", revision: "e5c6456dd9cbbd6bcdc3aeefbddfcd483c5d3ca6"),
+        // Prebuilt sherpa-onnx + onnxruntime (macOS arm64) for the GigaAM backend.
+        .package(url: "https://github.com/vlsi/sherpa-onnx-apple-arm64", exact: "1.13.2"),
     ],
     targets: [
         // Precompiled whisper.cpp XCFramework (downloaded from ggml-org/whisper.cpp releases).
@@ -68,6 +74,13 @@ let package = Package(
         .target(
             name: "MinuteLMStudio",
             dependencies: ["MinuteCore"]
+        ),
+        .target(
+            name: "MinuteSherpaONNX",
+            dependencies: [
+                "MinuteCore",
+                .product(name: "SherpaOnnx", package: "sherpa-onnx-apple-arm64"),
+            ]
         ),
         .testTarget(
             name: "MinuteCoreTests",

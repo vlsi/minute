@@ -129,6 +129,13 @@ final class ModelsSettingsViewModel: ObservableObject {
             refresh()
         }
     }
+    @Published var selectedGigaAMModelID: String {
+        didSet {
+            guard oldValue != selectedGigaAMModelID else { return }
+            gigaAMModelStore.setSelectedModelID(selectedGigaAMModelID)
+            refresh()
+        }
+    }
     @Published var vocabularyBoostingEnabled: Bool {
         didSet {
             guard oldValue != vocabularyBoostingEnabled else { return }
@@ -163,6 +170,7 @@ final class ModelsSettingsViewModel: ObservableObject {
     private let transcriptionModelStore: TranscriptionModelSelectionStore
     private let transcriptionBackendStore: TranscriptionBackendSelectionStore
     private let fluidAudioModelStore: FluidAudioASRModelSelectionStore
+    private let gigaAMModelStore: GigaAMModelSelectionStore
     private let transcriptionLanguageStore: TranscriptionLanguageSelectionStore
     private let modelLifecycleController: ModelSetupLifecycleController
     private let availabilityProvider: any CapabilityAvailabilityProviding
@@ -184,6 +192,7 @@ final class ModelsSettingsViewModel: ObservableObject {
         transcriptionModelStore: TranscriptionModelSelectionStore = TranscriptionModelSelectionStore(),
         transcriptionBackendStore: TranscriptionBackendSelectionStore = TranscriptionBackendSelectionStore(),
         fluidAudioModelStore: FluidAudioASRModelSelectionStore = FluidAudioASRModelSelectionStore(),
+        gigaAMModelStore: GigaAMModelSelectionStore = GigaAMModelSelectionStore(),
         transcriptionLanguageStore: TranscriptionLanguageSelectionStore = TranscriptionLanguageSelectionStore(),
         availabilityProvider: (any CapabilityAvailabilityProviding)? = nil,
         ollamaModelDiscoverer: (any OllamaModelDiscovering)? = nil,
@@ -198,6 +207,7 @@ final class ModelsSettingsViewModel: ObservableObject {
         self.transcriptionModelStore = transcriptionModelStore
         self.transcriptionBackendStore = transcriptionBackendStore
         self.fluidAudioModelStore = fluidAudioModelStore
+        self.gigaAMModelStore = gigaAMModelStore
         self.transcriptionLanguageStore = transcriptionLanguageStore
         self.vocabularySettingsStore = vocabularySettingsStore ?? VocabularyBoostingSettingsStore()
         let resolvedModelManager = modelManager ?? DefaultModelManager(
@@ -206,7 +216,8 @@ final class ModelsSettingsViewModel: ObservableObject {
             visionModelStore: visionModelStore,
             transcriptionSelectionStore: transcriptionModelStore,
             transcriptionBackendStore: transcriptionBackendStore,
-            fluidAudioModelStore: fluidAudioModelStore
+            fluidAudioModelStore: fluidAudioModelStore,
+            gigaAMModelStore: gigaAMModelStore
         )
         self.providedOllamaModelDiscoverer = ollamaModelDiscoverer
         self.providedLMStudioModelDiscoverer = lmStudioModelDiscoverer
@@ -257,6 +268,11 @@ final class ModelsSettingsViewModel: ObservableObject {
         self.selectedFluidAudioModelID = selectedFluidModel.id
         if fluidAudioModelStore.selectedModelID() != selectedFluidModel.id {
             fluidAudioModelStore.setSelectedModelID(selectedFluidModel.id)
+        }
+        let selectedGigaAMModel = gigaAMModelStore.selectedModel()
+        self.selectedGigaAMModelID = selectedGigaAMModel.id
+        if gigaAMModelStore.selectedModelID() != selectedGigaAMModel.id {
+            gigaAMModelStore.setSelectedModelID(selectedGigaAMModel.id)
         }
         self.selectedTranscriptionLanguage = transcriptionLanguageStore.selectedLanguage()
         let vocabularySettings = self.vocabularySettingsStore.load()
@@ -409,12 +425,20 @@ final class ModelsSettingsViewModel: ObservableObject {
         FluidAudioASRModelCatalog.all
     }
 
+    var gigaAMModels: [GigaAMModel] {
+        GigaAMModelCatalog.all
+    }
+
     var isFluidAudioSelected: Bool {
         TranscriptionBackend.backend(for: selectedTranscriptionBackendID) == .fluidAudio
     }
 
+    var isGigaAMSelected: Bool {
+        TranscriptionBackend.backend(for: selectedTranscriptionBackendID) == .gigaAM
+    }
+
     var isWhisperSelected: Bool {
-        !isFluidAudioSelected
+        TranscriptionBackend.backend(for: selectedTranscriptionBackendID) == .whisper
     }
 
     var transcriptionLanguages: [TranscriptionLanguage] {

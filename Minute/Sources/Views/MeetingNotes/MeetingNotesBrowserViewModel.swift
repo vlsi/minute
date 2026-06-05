@@ -5,6 +5,7 @@ import MinuteCore
 import MinuteLlama
 import MinuteLMStudio
 import MinuteOllama
+import MinuteSherpaONNX
 import MinuteWhisper
 
 enum MeetingNotePreviewTab: String, CaseIterable, Identifiable {
@@ -1050,6 +1051,8 @@ final class MeetingNotesBrowserViewModel: ObservableObject {
             transcriptionService = ResilientWhisperTranscriptionService.liveDefault()
         case .fluidAudio:
             transcriptionService = FluidAudioTranscriptionService.liveDefault(selectionStore: fluidAudioModelStore)
+        case .gigaAM:
+            transcriptionService = GigaAMTranscriptionService.liveDefault()
         }
 
         let modelManager = DefaultModelManager(

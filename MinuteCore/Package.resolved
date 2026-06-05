@@ -1,5 +1,5 @@
 {
-  "originHash" : "6f42e6354c744c677422f30e9b8fcc0c90b70d8f6ab0dd999b9dace9a7453a28",
+  "originHash" : "71c2603a12ea5d96cc7b32d9c5360426fd0b7d923ad749ecfdc967bea54d9655",
   "pins" : [
     {
       "identity" : "fluidaudio",
@@ -7,6 +7,15 @@
       "location" : "https://github.com/FluidInference/FluidAudio.git",
       "state" : {
         "revision" : "e5c6456dd9cbbd6bcdc3aeefbddfcd483c5d3ca6"
+      }
+    },
+    {
+      "identity" : "sherpa-onnx-apple-arm64",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/vlsi/sherpa-onnx-apple-arm64",
+      "state" : {
+        "revision" : "ed7f066da9ef3601f6c621b7ef12a032bb2fddff",
+        "version" : "1.13.2"
       }
     }
   ],

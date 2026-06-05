@@ -3,6 +3,7 @@ import Foundation
 public enum TranscriptionBackend: String, CaseIterable, Sendable, Identifiable {
     case whisper
     case fluidAudio
+    case gigaAM
 
     public var id: String { rawValue }
 
@@ -12,6 +13,8 @@ public enum TranscriptionBackend: String, CaseIterable, Sendable, Identifiable {
             return "Whisper"
         case .fluidAudio:
             return "FluidAudio"
+        case .gigaAM:
+            return "GigaAM"
         }
     }
 
@@ -21,6 +24,8 @@ public enum TranscriptionBackend: String, CaseIterable, Sendable, Identifiable {
             return "Local transcription via whisper.cpp."
         case .fluidAudio:
             return "Local transcription via Parakeet ASR."
+        case .gigaAM:
+            return "Local Russian transcription via GigaAM (sherpa-onnx, Apple Silicon)."
         }
     }
 

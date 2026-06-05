@@ -8,6 +8,7 @@ import MinuteCore
 import MinuteLlama
 import MinuteLMStudio
 import MinuteOllama
+import MinuteSherpaONNX
 import MinuteWhisper
 import os
 import UniformTypeIdentifiers
@@ -667,6 +668,8 @@ final class MeetingPipelineViewModel: ObservableObject {
             transcriptionService = ResilientWhisperTranscriptionService.liveDefault()
         case .fluidAudio:
             transcriptionService = FluidAudioTranscriptionService.liveDefault(selectionStore: fluidAudioModelStore)
+        case .gigaAM:
+            transcriptionService = GigaAMTranscriptionService.liveDefault()
         }
         let bookmarkStore = UserDefaultsVaultBookmarkStore(key: AppConfiguration.Defaults.vaultRootBookmarkKey)
         let vaultAccess = VaultAccess(bookmarkStore: bookmarkStore)

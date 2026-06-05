@@ -28,6 +28,7 @@ public struct AppConfiguration: Sendable, Equatable {
         public static let transcriptionModelIDKey = "transcriptionModelID"
         public static let transcriptionBackendIDKey = "transcriptionBackendID"
         public static let fluidAudioAsrModelIDKey = "fluidAudioAsrModelID"
+        public static let gigaAMModelIDKey = "gigaAMModelID"
         public static let micActivityNotificationsEnabledKey = "micActivityNotificationsEnabled"
         public static let knownSpeakerSuggestionsEnabledKey = "knownSpeakerSuggestionsEnabled"
         public static let outputLanguageKey = "outputLanguage"

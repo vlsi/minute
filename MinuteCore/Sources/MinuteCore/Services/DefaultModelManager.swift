@@ -49,6 +49,7 @@ public actor DefaultModelManager: ModelManaging {
     private let transcriptionSelectionStore: TranscriptionModelSelectionStore
     private let transcriptionBackendStore: TranscriptionBackendSelectionStore
     private let fluidAudioModelManager: any FluidAudioModelManaging
+    private let gigaAMModelStore: GigaAMModelSelectionStore
     private let logger = Logger(subsystem: "roblibob.Minute", category: "models")
 
     public init(
@@ -60,7 +61,8 @@ public actor DefaultModelManager: ModelManaging {
         transcriptionSelectionStore: TranscriptionModelSelectionStore = TranscriptionModelSelectionStore(),
         transcriptionBackendStore: TranscriptionBackendSelectionStore = TranscriptionBackendSelectionStore(),
         fluidAudioModelStore: FluidAudioASRModelSelectionStore = FluidAudioASRModelSelectionStore(),
-        fluidAudioModelManager: (any FluidAudioModelManaging)? = nil
+        fluidAudioModelManager: (any FluidAudioModelManaging)? = nil,
+        gigaAMModelStore: GigaAMModelSelectionStore = GigaAMModelSelectionStore()
     ) {
         self.requiredModelsOverride = requiredModels
         self.providerStore = providerStore
@@ -70,6 +72,7 @@ public actor DefaultModelManager: ModelManaging {
         self.transcriptionSelectionStore = transcriptionSelectionStore
         self.transcriptionBackendStore = transcriptionBackendStore
         self.fluidAudioModelManager = fluidAudioModelManager ?? FluidAudioASRModelManager(selectionStore: fluidAudioModelStore)
+        self.gigaAMModelStore = gigaAMModelStore
     }
 
     public func ensureModelsPresent(progress: (@Sendable (ModelDownloadProgress) -> Void)? = nil) async throws {
@@ -259,6 +262,7 @@ public actor DefaultModelManager: ModelManaging {
         visionProvider: InferenceProvider = .builtIn,
         screenContextEnabled: Bool = true,
         selectedTranscriptionModelID: String? = nil,
+        selectedGigaAMModelID: String? = nil,
         transcriptionBackend: TranscriptionBackend = .whisper
     ) -> [ModelSpec] {
         let transcriptionModel = TranscriptionModelCatalog.model(for: selectedTranscriptionModelID)
@@ -278,6 +282,32 @@ public actor DefaultModelManager: ModelManaging {
                     sourceURL: transcriptionModel.sourceURL,
                     expectedSHA256Hex: transcriptionModel.expectedSHA256Hex,
                     expectedFileSizeBytes: transcriptionModel.expectedFileSizeBytes
+                )
+            )
+        }
+
+        if transcriptionBackend == .gigaAM {
+            let gigaAMModel = GigaAMModelCatalog.model(for: selectedGigaAMModelID) ?? GigaAMModelCatalog.defaultModel
+            for file in gigaAMModel.files {
+                models.append(
+                    ModelSpec(
+                        id: "\(gigaAMModel.id)/\(file.fileName)",
+                        destinationURL: gigaAMModel.destinationURL(for: file),
+                        sourceURL: file.sourceURL,
+                        expectedSHA256Hex: file.expectedSHA256Hex,
+                        expectedFileSizeBytes: file.expectedFileSizeBytes
+                    )
+                )
+            }
+
+            let vad = GigaAMModelCatalog.voiceActivityDetector
+            models.append(
+                ModelSpec(
+                    id: "gigaam/\(vad.fileName)",
+                    destinationURL: GigaAMModelPaths.voiceActivityDetectorURL,
+                    sourceURL: vad.sourceURL,
+                    expectedSHA256Hex: vad.expectedSHA256Hex,
+                    expectedFileSizeBytes: vad.expectedFileSizeBytes
                 )
             )
         }
@@ -354,6 +384,7 @@ public actor DefaultModelManager: ModelManaging {
         let visionProvider = providerStore.selectedProvider(for: .vision)
         let screenContextEnabled = screenContextSettingsStore.isEnabled
         let transcriptionID = transcriptionSelectionStore.selectedModelID()
+        let gigaAMID = gigaAMModelStore.selectedModelID()
         let backend = transcriptionBackendStore.selectedBackend()
         return DefaultModelManager.defaultRequiredModels(
             selectedSummarizationModelID: summarizationID,
@@ -362,6 +393,7 @@ public actor DefaultModelManager: ModelManaging {
             visionProvider: visionProvider,
             screenContextEnabled: screenContextEnabled,
             selectedTranscriptionModelID: transcriptionID,
+            selectedGigaAMModelID: gigaAMID,
             transcriptionBackend: backend
         )
     }
