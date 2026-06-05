@@ -1,4 +1,5 @@
 @preconcurrency import FluidAudio
+import CoreML
 import Foundation
 import os
 
@@ -274,7 +275,8 @@ private actor FluidAudioASRModelCache {
             return cached
         }
 
-        let models = try await AsrModels.downloadAndLoad(version: version)
+        // Run the Parakeet conformer encoder on the GPU (~+8% RTFx, WER-neutral on Apple Silicon).
+        let models = try await AsrModels.downloadAndLoad(version: version, encoderComputeUnits: .cpuAndGPU)
         cached[key] = models
         return models
     }
