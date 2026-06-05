@@ -178,6 +178,13 @@ final class OnboardingViewModel: ObservableObject {
             modelLifecycleController.refresh()
         }
     }
+    @Published var selectedGigaAMModelID: String {
+        didSet {
+            guard oldValue != selectedGigaAMModelID else { return }
+            gigaAMModelStore.setSelectedModelID(selectedGigaAMModelID)
+            modelLifecycleController.refresh()
+        }
+    }
 
     private let defaults: UserDefaults
     private let inferenceProviderStore: InferenceProviderSelectionStore
@@ -189,6 +196,7 @@ final class OnboardingViewModel: ObservableObject {
     private let transcriptionModelStore: TranscriptionModelSelectionStore
     private let transcriptionBackendStore: TranscriptionBackendSelectionStore
     private let fluidAudioModelStore: FluidAudioASRModelSelectionStore
+    private let gigaAMModelStore: GigaAMModelSelectionStore
     private let modelLifecycleController: ModelSetupLifecycleController
     private let availabilityProvider: any CapabilityAvailabilityProviding
     private let usesCustomAvailabilityProvider: Bool
@@ -218,6 +226,7 @@ final class OnboardingViewModel: ObservableObject {
         transcriptionModelStore: TranscriptionModelSelectionStore? = nil,
         transcriptionBackendStore: TranscriptionBackendSelectionStore? = nil,
         fluidAudioModelStore: FluidAudioASRModelSelectionStore? = nil,
+        gigaAMModelStore: GigaAMModelSelectionStore? = nil,
         availabilityProvider: (any CapabilityAvailabilityProviding)? = nil,
         ollamaModelDiscoverer: (any OllamaModelDiscovering)? = nil,
         lmStudioModelDiscoverer: (any LMStudioModelDiscovering)? = nil
@@ -231,13 +240,15 @@ final class OnboardingViewModel: ObservableObject {
         let transcriptionStore = transcriptionModelStore ?? TranscriptionModelSelectionStore(defaults: defaults)
         let backendStore = transcriptionBackendStore ?? TranscriptionBackendSelectionStore(defaults: defaults)
         let fluidStore = fluidAudioModelStore ?? FluidAudioASRModelSelectionStore(defaults: defaults)
+        let gigaStore = gigaAMModelStore ?? GigaAMModelSelectionStore(defaults: defaults)
         let resolvedModelManager = modelManager ?? DefaultModelManager(
             providerStore: providerStore,
             selectionStore: store,
             visionModelStore: visionStore,
             transcriptionSelectionStore: transcriptionStore,
             transcriptionBackendStore: backendStore,
-            fluidAudioModelStore: fluidStore
+            fluidAudioModelStore: fluidStore,
+            gigaAMModelStore: gigaStore
         )
         self.defaults = defaults
         self.inferenceProviderStore = providerStore
@@ -249,6 +260,7 @@ final class OnboardingViewModel: ObservableObject {
         self.transcriptionModelStore = transcriptionStore
         self.transcriptionBackendStore = backendStore
         self.fluidAudioModelStore = fluidStore
+        self.gigaAMModelStore = gigaStore
         self.providedOllamaModelDiscoverer = ollamaModelDiscoverer
         self.providedLMStudioModelDiscoverer = lmStudioModelDiscoverer
         self.usesCustomAvailabilityProvider = availabilityProvider != nil
@@ -299,6 +311,11 @@ final class OnboardingViewModel: ObservableObject {
         self.selectedFluidAudioModelID = selectedFluid.id
         if fluidStore.selectedModelID() != selectedFluid.id {
             fluidStore.setSelectedModelID(selectedFluid.id)
+        }
+        let selectedGiga = gigaStore.selectedModel()
+        self.selectedGigaAMModelID = selectedGiga.id
+        if gigaStore.selectedModelID() != selectedGiga.id {
+            gigaStore.setSelectedModelID(selectedGiga.id)
         }
         let bookmarkStore = UserDefaultsVaultBookmarkStore(
             defaults: defaults,
@@ -407,6 +424,9 @@ final class OnboardingViewModel: ObservableObject {
         if isFluidAudioSelected {
             return !selectedFluidAudioModelID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
+        if isGigaAMSelected {
+            return !selectedGigaAMModelID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
         return !selectedTranscriptionModelID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
@@ -455,8 +475,16 @@ final class OnboardingViewModel: ObservableObject {
         FluidAudioASRModelCatalog.all
     }
 
+    var gigaAMModels: [GigaAMModel] {
+        GigaAMModelCatalog.all
+    }
+
     var isFluidAudioSelected: Bool {
         TranscriptionBackend.backend(for: selectedTranscriptionBackendID) == .fluidAudio
+    }
+
+    var isGigaAMSelected: Bool {
+        TranscriptionBackend.backend(for: selectedTranscriptionBackendID) == .gigaAM
     }
 
     var selectedTranscriptionBackendDisplayName: String {

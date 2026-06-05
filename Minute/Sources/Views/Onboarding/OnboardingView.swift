@@ -143,6 +143,11 @@ struct OnboardingView: View {
                     models: model.fluidAudioModels,
                     selection: $model.selectedFluidAudioModelID
                 )
+            } else if model.isGigaAMSelected {
+                GigaAMModelPicker(
+                    models: model.gigaAMModels,
+                    selection: $model.selectedGigaAMModelID
+                )
             } else {
                 TranscriptionModelPicker(
                     models: model.transcriptionModels,
