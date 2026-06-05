@@ -68,6 +68,11 @@ public struct GigaAMModel: Sendable, Equatable, Identifiable {
         [encoder, decoder, joiner, ctcModel, tokens].compactMap { $0 }
     }
 
+    /// Total expected download size for this variant (model files; the shared VAD is negligible).
+    public var downloadSizeBytes: Int64 {
+        files.reduce(0) { $0 + $1.expectedFileSizeBytes }
+    }
+
     public func destinationURL(for file: GigaAMModelFile) -> URL {
         GigaAMModelPaths.fileURL(folder: folder, fileName: file.fileName)
     }
