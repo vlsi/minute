@@ -10,7 +10,7 @@ import os
 /// segments with Silero VAD; each segment is decoded on its own and emitted as a
 /// `TranscriptSegment` with absolute timestamps. Those timestamps let the
 /// pipeline attribute text to speakers from the separate diarization pass.
-public struct GigaAMTranscriptionService: TranscriptionServicing {
+public struct GigaAMTranscriptionService: ProgressReportingTranscriptionServicing {
     private let model: GigaAMModel
     private let vadModelPath: String
     private let logger = Logger(subsystem: "roblibob.Minute", category: "gigaam.asr")
@@ -30,6 +30,13 @@ public struct GigaAMTranscriptionService: TranscriptionServicing {
     }
 
     public func transcribe(wavURL: URL) async throws -> TranscriptionResult {
+        try await transcribe(wavURL: wavURL, onProgress: { _ in })
+    }
+
+    public func transcribe(
+        wavURL: URL,
+        onProgress: @escaping @Sendable (TranscriptionProgress) -> Void
+    ) async throws -> TranscriptionResult {
         try Task.checkCancellation()
         try verifyModelFilesPresent()
 
@@ -46,29 +53,17 @@ public struct GigaAMTranscriptionService: TranscriptionServicing {
         }
         defer { SherpaOnnxDestroyVoiceActivityDetector(vad) }
 
-        var segments: [TranscriptSegment] = []
-        var textParts: [String] = []
-
-        func drainSpeechSegments() throws {
+        // Phase 1: run VAD over the whole file to collect speech ranges. This is cheap,
+        // and lets progress/ETA track decoded speech rather than the recording timeline,
+        // so skipped silence does not inflate the bar.
+        var speechRanges: [(start: Int, count: Int)] = []
+        func collectSpeechSegments() throws {
             while SherpaOnnxVoiceActivityDetectorEmpty(vad) == 0 {
                 try Task.checkCancellation()
                 guard let segmentPointer = SherpaOnnxVoiceActivityDetectorFront(vad) else { break }
-                let startSample = Int(segmentPointer.pointee.start)
-                let sampleCount = Int(segmentPointer.pointee.n)
-                let segmentSamples = segmentPointer.pointee.samples.map {
-                    Array(UnsafeBufferPointer(start: $0, count: sampleCount))
-                } ?? []
+                speechRanges.append((Int(segmentPointer.pointee.start), Int(segmentPointer.pointee.n)))
                 SherpaOnnxDestroySpeechSegment(segmentPointer)
                 SherpaOnnxVoiceActivityDetectorPop(vad)
-
-                let text = decode(recognizer: recognizer, samples: segmentSamples)
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !text.isEmpty else { continue }
-
-                let startSeconds = Double(startSample) / Double(Self.sampleRate)
-                let endSeconds = Double(startSample + sampleCount) / Double(Self.sampleRate)
-                segments.append(TranscriptSegment(startSeconds: startSeconds, endSeconds: endSeconds, text: text))
-                textParts.append(text)
             }
         }
 
@@ -79,12 +74,37 @@ public struct GigaAMTranscriptionService: TranscriptionServicing {
             let chunk = Array(samples[index ..< index + window])
             SherpaOnnxVoiceActivityDetectorAcceptWaveform(vad, chunk, Int32(window))
             index += window
-            try drainSpeechSegments()
+            try collectSpeechSegments()
         }
         SherpaOnnxVoiceActivityDetectorFlush(vad)
-        try drainSpeechSegments()
+        try collectSpeechSegments()
 
-        logger.debug("GigaAM ASR finished: segments=\(segments.count, privacy: .public)")
+        // Phase 2: decode each speech segment. Progress is decoded speech / total speech.
+        let totalSpeechSeconds = speechRanges.reduce(0.0) { $0 + Double($1.count) / Double(Self.sampleRate) }
+        var processedSpeechSeconds = 0.0
+        var segments: [TranscriptSegment] = []
+        var textParts: [String] = []
+
+        for range in speechRanges {
+            try Task.checkCancellation()
+            let endIndex = min(range.start + range.count, samples.count)
+            guard range.start >= 0, range.start < endIndex else { continue }
+            let startSeconds = Double(range.start) / Double(Self.sampleRate)
+            let endSeconds = Double(endIndex) / Double(Self.sampleRate)
+            let segmentSamples = Array(samples[range.start ..< endIndex])
+
+            let text = decode(recognizer: recognizer, samples: segmentSamples)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !text.isEmpty {
+                segments.append(TranscriptSegment(startSeconds: startSeconds, endSeconds: endSeconds, text: text))
+                textParts.append(text)
+            }
+
+            processedSpeechSeconds += Double(range.count) / Double(Self.sampleRate)
+            onProgress(TranscriptionProgress(processedSeconds: processedSpeechSeconds, totalSeconds: totalSpeechSeconds))
+        }
+
+        logger.debug("GigaAM ASR finished: speechSegments=\(speechRanges.count, privacy: .public) segments=\(segments.count, privacy: .public)")
         return TranscriptionResult(text: textParts.joined(separator: " "), segments: segments)
     }
 

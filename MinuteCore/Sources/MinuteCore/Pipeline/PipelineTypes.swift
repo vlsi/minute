@@ -17,6 +17,10 @@ public struct PipelineProgress: Sendable, Equatable {
     public var currentPassIndex: Int?
     public var totalPassCount: Int?
     public var resumedFromPassIndex: Int?
+    /// Seconds of audio transcribed so far (transcribing stage only).
+    public var transcriptionProcessedSeconds: Double?
+    /// Total audio length in seconds (transcribing stage only).
+    public var transcriptionTotalSeconds: Double?
 
     public init(
         stage: PipelineStage,
@@ -26,7 +30,9 @@ public struct PipelineProgress: Sendable, Equatable {
         estimatedPassCount: Int? = nil,
         currentPassIndex: Int? = nil,
         totalPassCount: Int? = nil,
-        resumedFromPassIndex: Int? = nil
+        resumedFromPassIndex: Int? = nil,
+        transcriptionProcessedSeconds: Double? = nil,
+        transcriptionTotalSeconds: Double? = nil
     ) {
         self.stage = stage
         self.fractionCompleted = fractionCompleted
@@ -36,14 +42,25 @@ public struct PipelineProgress: Sendable, Equatable {
         self.currentPassIndex = currentPassIndex
         self.totalPassCount = totalPassCount
         self.resumedFromPassIndex = resumedFromPassIndex
+        self.transcriptionProcessedSeconds = transcriptionProcessedSeconds
+        self.transcriptionTotalSeconds = transcriptionTotalSeconds
     }
 
     public static func downloadingModels(fractionCompleted: Double) -> PipelineProgress {
         PipelineProgress(stage: .downloadingModels, fractionCompleted: fractionCompleted)
     }
 
-    public static func transcribing(fractionCompleted: Double) -> PipelineProgress {
-        PipelineProgress(stage: .transcribing, fractionCompleted: fractionCompleted)
+    public static func transcribing(
+        fractionCompleted: Double,
+        processedSeconds: Double? = nil,
+        totalSeconds: Double? = nil
+    ) -> PipelineProgress {
+        PipelineProgress(
+            stage: .transcribing,
+            fractionCompleted: fractionCompleted,
+            transcriptionProcessedSeconds: processedSeconds,
+            transcriptionTotalSeconds: totalSeconds
+        )
     }
 
     public static func normalizingAudioLevels(fractionCompleted: Double) -> PipelineProgress {

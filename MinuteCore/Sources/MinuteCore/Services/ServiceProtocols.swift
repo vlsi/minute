@@ -126,6 +126,35 @@ public protocol TranscriptionServicing: Sendable {
     func transcribe(wavURL: URL) async throws -> TranscriptionResult
 }
 
+/// Incremental transcription progress, expressed as a position in the audio.
+public struct TranscriptionProgress: Sendable, Equatable {
+    /// Seconds of audio transcribed so far.
+    public var processedSeconds: Double
+    /// Total audio length in seconds.
+    public var totalSeconds: Double
+
+    public init(processedSeconds: Double, totalSeconds: Double) {
+        self.processedSeconds = processedSeconds
+        self.totalSeconds = totalSeconds
+    }
+
+    public var fractionCompleted: Double {
+        guard totalSeconds > 0 else { return 0 }
+        return min(max(processedSeconds / totalSeconds, 0), 1)
+    }
+}
+
+/// Adopted by backends that can report progress while transcribing.
+///
+/// The pipeline prefers this when available; backends that process the audio in
+/// one opaque call keep using `TranscriptionServicing`.
+public protocol ProgressReportingTranscriptionServicing: TranscriptionServicing {
+    func transcribe(
+        wavURL: URL,
+        onProgress: @escaping @Sendable (TranscriptionProgress) -> Void
+    ) async throws -> TranscriptionResult
+}
+
 public struct TranscriptionVocabularySettings: Sendable, Equatable {
     public var mode: VocabularyBoostingSessionMode
     public var terms: [String]

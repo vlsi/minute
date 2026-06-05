@@ -121,6 +121,9 @@ final class MeetingPipelineViewModel: ObservableObject {
     @Published private(set) var progress: Double? = nil
     @Published private(set) var statusLabelOverride: String? = nil
     @Published private(set) var summarizationProgressDetail: String? = nil
+    @Published private(set) var transcriptionProgressDetail: String? = nil
+    private var stageProgressStartedAt: Date?
+    private var stageProgressStage: PipelineStage?
     @Published private(set) var backgroundProcessingSnapshot: BackgroundProcessingSnapshot = BackgroundProcessingSnapshot()
     @Published private(set) var lastBackgroundProcessedNoteURL: URL? = nil
     @Published private(set) var vaultStatus: VaultStatus = VaultStatus(displayText: "Not selected", isConfigured: false)
@@ -1938,21 +1941,52 @@ final class MeetingPipelineViewModel: ObservableObject {
         switch update.stage {
         case .downloadingModels:
             summarizationProgressDetail = nil
+            resetTranscriptionProgress()
             state = .processing(stage: .downloadingModels, context: context)
         case .normalizingAudioLevels:
             summarizationProgressDetail = nil
+            resetTranscriptionProgress()
             state = .processing(stage: .normalizingAudioLevels, context: context)
         case .transcribing:
             summarizationProgressDetail = nil
+            transcriptionProgressDetail = makeStagePositionDetail(update)
             state = .processing(stage: .transcribing, context: context)
         case .summarizing:
             summarizationProgressDetail = makeSummarizationProgressDetail(update)
+            resetTranscriptionProgress()
             state = .processing(stage: .summarizing, context: context)
         case .writing:
             summarizationProgressDetail = nil
+            resetTranscriptionProgress()
             guard let extraction = update.extraction else { return }
             state = .writing(context: context, extraction: extraction)
         }
+    }
+
+    private func resetTranscriptionProgress() {
+        transcriptionProgressDetail = nil
+        stageProgressStartedAt = nil
+        stageProgressStage = nil
+    }
+
+    /// Builds a "position / total · speed× · ~ETA" line for a stage that reports audio position.
+    ///
+    /// The wall-clock used for speed/ETA resets whenever the stage changes, so each
+    /// stage (normalizing, transcribing) is measured independently.
+    private func makeStagePositionDetail(_ update: PipelineProgress) -> String? {
+        guard let processed = update.transcriptionProcessedSeconds,
+              let total = update.transcriptionTotalSeconds,
+              total > 0 else {
+            return nil
+        }
+        let now = Date()
+        if stageProgressStage != update.stage {
+            stageProgressStage = update.stage
+            stageProgressStartedAt = now
+        }
+        let elapsed = now.timeIntervalSince(stageProgressStartedAt ?? now)
+        return TranscriptionProgress(processedSeconds: processed, totalSeconds: total)
+            .statusLine(elapsedSeconds: elapsed)
     }
 
     private func makeSummarizationProgressDetail(_ update: PipelineProgress) -> String? {

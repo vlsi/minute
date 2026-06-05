@@ -11,6 +11,7 @@ struct PipelineStatusPresenter {
         var recoverableRecordings: [RecoverableRecording]
         var recordingWarningDetail: String?
         var summarizationProgressDetail: String?
+        var transcriptionProgressDetail: String?
     }
 
     enum Action: Equatable {
@@ -174,7 +175,7 @@ struct PipelineStatusPresenter {
         case .processing, .writing, .importing:
             return Presentation(
                 title: input.statusLabelOverride ?? input.state.statusLabel,
-                detail: "Meeting is being processed.",
+                detail: input.transcriptionProgressDetail ?? "Meeting is being processed.",
                 progress: input.progress,
                 showsActivity: input.progress == nil,
                 isError: false,

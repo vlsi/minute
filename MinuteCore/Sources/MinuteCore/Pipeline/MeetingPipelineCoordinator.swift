@@ -274,8 +274,21 @@ public actor MeetingPipelineCoordinator {
             }
 
             let transcription: TranscriptionResult
+            let transcribeBaseFraction = context.normalizeAnalysisAudio ? 0.18 : 0.1
             if let override = context.transcriptionOverride, !override.text.isEmpty {
                 transcription = override
+            } else if let progressService = transcriptionService as? (any ProgressReportingTranscriptionServicing) {
+                let fallbackTotal = context.audioDurationSeconds
+                transcription = try await progressService.transcribe(wavURL: context.analysisAudioURL) { update in
+                    let total = update.totalSeconds > 0 ? update.totalSeconds : fallbackTotal
+                    // Map audio position into the transcribing band [base ... 0.9].
+                    let fraction = transcribeBaseFraction + (0.9 - transcribeBaseFraction) * update.fractionCompleted
+                    progress?(.transcribing(
+                        fractionCompleted: fraction,
+                        processedSeconds: update.processedSeconds,
+                        totalSeconds: total
+                    ))
+                }
             } else if let vocabularyService = transcriptionService as? (any VocabularyBoostingTranscriptionServicing) {
                 transcription = try await vocabularyService.transcribe(
                     wavURL: context.analysisAudioURL,

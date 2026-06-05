@@ -395,7 +395,8 @@ struct PipelineContentView: View {
                 statusLabelOverride: model.statusLabelOverride,
                 recoverableRecordings: model.recoverableRecordings,
                 recordingWarningDetail: recordingWarningDetailText(),
-                summarizationProgressDetail: model.summarizationProgressDetail
+                summarizationProgressDetail: model.summarizationProgressDetail,
+                transcriptionProgressDetail: model.transcriptionProgressDetail
             ),
             dismissedStatusDrawerID: dismissedStatusDrawerID
         ) else {
