@@ -41,6 +41,37 @@ public protocol ProcessRunning: Sendable {
         workingDirectoryURL: URL?,
         maximumOutputBytes: Int
     ) async throws -> ProcessResult
+
+    /// Runs a subprocess, invoking `onStdoutLine` for each newline-terminated line
+    /// of stdout as it arrives. Falls back to the non-streaming `run` by default.
+    func run(
+        executableURL: URL,
+        arguments: [String],
+        environment: [String: String]?,
+        workingDirectoryURL: URL?,
+        maximumOutputBytes: Int,
+        onStdoutLine: (@Sendable (String) -> Void)?
+    ) async throws -> ProcessResult
+}
+
+public extension ProcessRunning {
+    func run(
+        executableURL: URL,
+        arguments: [String],
+        environment: [String: String]?,
+        workingDirectoryURL: URL?,
+        maximumOutputBytes: Int,
+        onStdoutLine: (@Sendable (String) -> Void)?
+    ) async throws -> ProcessResult {
+        _ = onStdoutLine
+        return try await run(
+            executableURL: executableURL,
+            arguments: arguments,
+            environment: environment,
+            workingDirectoryURL: workingDirectoryURL,
+            maximumOutputBytes: maximumOutputBytes
+        )
+    }
 }
 
 /// Default Process runner used for invoking bundled executables (whisper/llama/ffmpeg).
@@ -58,6 +89,24 @@ public struct DefaultProcessRunner: ProcessRunning {
         environment: [String: String]? = nil,
         workingDirectoryURL: URL? = nil,
         maximumOutputBytes: Int = 5 * 1024 * 1024
+    ) async throws -> ProcessResult {
+        try await run(
+            executableURL: executableURL,
+            arguments: arguments,
+            environment: environment,
+            workingDirectoryURL: workingDirectoryURL,
+            maximumOutputBytes: maximumOutputBytes,
+            onStdoutLine: nil
+        )
+    }
+
+    public func run(
+        executableURL: URL,
+        arguments: [String],
+        environment: [String: String]?,
+        workingDirectoryURL: URL?,
+        maximumOutputBytes: Int,
+        onStdoutLine: (@Sendable (String) -> Void)?
     ) async throws -> ProcessResult {
         let process = Process()
         process.executableURL = executableURL
@@ -81,8 +130,8 @@ public struct DefaultProcessRunner: ProcessRunning {
             }
 
             async let terminationStatus: Int32 = waitForTermination(process)
-            async let stdoutData: Data = readAllData(from: stdoutHandle, maximumBytes: maximumOutputBytes)
-            async let stderrData: Data = readAllData(from: stderrHandle, maximumBytes: maximumOutputBytes)
+            async let stdoutData: Data = readAllData(from: stdoutHandle, maximumBytes: maximumOutputBytes, onLine: onStdoutLine)
+            async let stderrData: Data = readAllData(from: stderrHandle, maximumBytes: maximumOutputBytes, onLine: nil)
 
             let (exitCode, outData, errData) = try await (terminationStatus, stdoutData, stderrData)
 
@@ -112,8 +161,25 @@ public struct DefaultProcessRunner: ProcessRunning {
         }
     }
 
-    private func readAllData(from handle: FileHandle, maximumBytes: Int) async throws -> Data {
+    private func readAllData(
+        from handle: FileHandle,
+        maximumBytes: Int,
+        onLine: (@Sendable (String) -> Void)?
+    ) async throws -> Data {
         var buffer = Data()
+        var lineBuffer = Data()
+
+        func flushLines(final: Bool) {
+            guard let onLine else { return }
+            while let newlineIndex = lineBuffer.firstIndex(of: 0x0A) {
+                onLine(String(decoding: lineBuffer[lineBuffer.startIndex ..< newlineIndex], as: UTF8.self))
+                lineBuffer = Data(lineBuffer[lineBuffer.index(after: newlineIndex)...])
+            }
+            if final, !lineBuffer.isEmpty {
+                onLine(String(decoding: lineBuffer, as: UTF8.self))
+                lineBuffer.removeAll()
+            }
+        }
 
         while true {
             let chunk = try handle.read(upToCount: 16 * 1024)
@@ -125,8 +191,13 @@ public struct DefaultProcessRunner: ProcessRunning {
             if buffer.count > maximumBytes {
                 throw ProcessRunnerError.outputLimitExceeded(maximumBytes: maximumBytes)
             }
+            if onLine != nil {
+                lineBuffer.append(chunk)
+                flushLines(final: false)
+            }
         }
 
+        flushLines(final: true)
         return buffer
     }
 }

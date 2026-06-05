@@ -63,8 +63,17 @@ public struct PipelineProgress: Sendable, Equatable {
         )
     }
 
-    public static func normalizingAudioLevels(fractionCompleted: Double) -> PipelineProgress {
-        PipelineProgress(stage: .normalizingAudioLevels, fractionCompleted: fractionCompleted)
+    public static func normalizingAudioLevels(
+        fractionCompleted: Double,
+        processedSeconds: Double? = nil,
+        totalSeconds: Double? = nil
+    ) -> PipelineProgress {
+        PipelineProgress(
+            stage: .normalizingAudioLevels,
+            fractionCompleted: fractionCompleted,
+            transcriptionProcessedSeconds: processedSeconds,
+            transcriptionTotalSeconds: totalSeconds
+        )
     }
 
     public static func summarizing(

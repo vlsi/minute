@@ -1945,7 +1945,7 @@ final class MeetingPipelineViewModel: ObservableObject {
             state = .processing(stage: .downloadingModels, context: context)
         case .normalizingAudioLevels:
             summarizationProgressDetail = nil
-            resetTranscriptionProgress()
+            transcriptionProgressDetail = makeStagePositionDetail(update)
             state = .processing(stage: .normalizingAudioLevels, context: context)
         case .transcribing:
             summarizationProgressDetail = nil

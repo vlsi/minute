@@ -287,17 +287,27 @@ private actor CapturingDiarizationService: DiarizationServicing {
 private struct RecordingAudioLoudnessNormalizer: AudioLoudnessNormalizing {
     let normalizedURL: URL
 
-    func normalizeForAnalysis(inputURL: URL, workingDirectoryURL: URL) async throws -> URL {
+    func normalizeForAnalysis(
+        inputURL: URL,
+        workingDirectoryURL: URL,
+        onProgress: (@Sendable (LoudnessNormalizationProgress) -> Void)?
+    ) async throws -> URL {
         _ = inputURL
         _ = workingDirectoryURL
+        _ = onProgress
         return normalizedURL
     }
 }
 
 private struct FailingAudioLoudnessNormalizer: AudioLoudnessNormalizing {
-    func normalizeForAnalysis(inputURL: URL, workingDirectoryURL: URL) async throws -> URL {
+    func normalizeForAnalysis(
+        inputURL: URL,
+        workingDirectoryURL: URL,
+        onProgress: (@Sendable (LoudnessNormalizationProgress) -> Void)?
+    ) async throws -> URL {
         _ = inputURL
         _ = workingDirectoryURL
+        _ = onProgress
         throw MinuteError.audioExportFailed
     }
 }

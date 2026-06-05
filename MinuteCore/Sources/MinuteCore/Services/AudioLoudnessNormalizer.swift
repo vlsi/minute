@@ -1,18 +1,53 @@
 import Foundation
 import os
 
+/// Progress for one pass of two-pass loudness normalization.
+public struct LoudnessNormalizationProgress: Sendable, Equatable {
+    public var passIndex: Int
+    public var totalPasses: Int
+    public var processedSeconds: Double
+
+    public init(passIndex: Int, totalPasses: Int, processedSeconds: Double) {
+        self.passIndex = passIndex
+        self.totalPasses = totalPasses
+        self.processedSeconds = processedSeconds
+    }
+
+    /// Overall completed fraction across all passes for a known audio duration.
+    public func overallFraction(totalSeconds: Double) -> Double {
+        guard totalPasses > 0 else { return 0 }
+        let within = totalSeconds > 0 ? min(max(processedSeconds / totalSeconds, 0), 1) : 0
+        return (Double(passIndex) + within) / Double(totalPasses)
+    }
+}
+
 public protocol AudioLoudnessNormalizing: Sendable {
     /// Produces a deterministic, analysis-only loudness-normalized WAV for downstream services.
     ///
     /// - Returns: URL to a temporary normalized WAV. Never modifies the input file.
-    func normalizeForAnalysis(inputURL: URL, workingDirectoryURL: URL) async throws -> URL
+    func normalizeForAnalysis(
+        inputURL: URL,
+        workingDirectoryURL: URL,
+        onProgress: (@Sendable (LoudnessNormalizationProgress) -> Void)?
+    ) async throws -> URL
+}
+
+public extension AudioLoudnessNormalizing {
+    func normalizeForAnalysis(inputURL: URL, workingDirectoryURL: URL) async throws -> URL {
+        try await normalizeForAnalysis(inputURL: inputURL, workingDirectoryURL: workingDirectoryURL, onProgress: nil)
+    }
 }
 
 public struct NoOpAudioLoudnessNormalizer: AudioLoudnessNormalizing {
     public init() {}
 
-    public func normalizeForAnalysis(inputURL: URL, workingDirectoryURL: URL) async throws -> URL {
+    public func normalizeForAnalysis(
+        inputURL: URL,
+        workingDirectoryURL: URL,
+        onProgress: (@Sendable (LoudnessNormalizationProgress) -> Void)?
+    ) async throws -> URL {
         _ = workingDirectoryURL
+        _ = onProgress
         return inputURL
     }
 }
@@ -55,7 +90,11 @@ public struct AudioLoudnessNormalizer: AudioLoudnessNormalizing {
         self.environment = environment
     }
 
-    public func normalizeForAnalysis(inputURL: URL, workingDirectoryURL: URL) async throws -> URL {
+    public func normalizeForAnalysis(
+        inputURL: URL,
+        workingDirectoryURL: URL,
+        onProgress: (@Sendable (LoudnessNormalizationProgress) -> Void)?
+    ) async throws -> URL {
         try Task.checkCancellation()
 
         let ffmpegURL = try FFmpegLocator.locateFFmpegExecutableURL(environment: environment)
@@ -68,9 +107,9 @@ public struct AudioLoudnessNormalizer: AudioLoudnessNormalizing {
             try? fileManager.removeItem(at: outputURL)
         }
 
-        let pass1 = try await runPass1(ffmpegURL: ffmpegURL, inputURL: inputURL)
+        let pass1 = try await runPass1(ffmpegURL: ffmpegURL, inputURL: inputURL, onProgress: onProgress)
         try Task.checkCancellation()
-        try await runPass2(ffmpegURL: ffmpegURL, inputURL: inputURL, outputURL: outputURL, measurements: pass1)
+        try await runPass2(ffmpegURL: ffmpegURL, inputURL: inputURL, outputURL: outputURL, measurements: pass1, onProgress: onProgress)
 
         return outputURL
     }
@@ -81,6 +120,7 @@ public struct AudioLoudnessNormalizer: AudioLoudnessNormalizing {
             "-nostdin",
             "-hide_banner",
             "-nostats",
+            "-progress", "pipe:1",
             "-threads", "1",
             "-filter_threads", "1",
             "-filter_complex_threads", "1",
@@ -106,6 +146,7 @@ public struct AudioLoudnessNormalizer: AudioLoudnessNormalizing {
             "-nostdin",
             "-hide_banner",
             "-nostats",
+            "-progress", "pipe:1",
             "-threads", "1",
             "-filter_threads", "1",
             "-filter_complex_threads", "1",
@@ -122,7 +163,11 @@ public struct AudioLoudnessNormalizer: AudioLoudnessNormalizing {
         ]
     }
 
-    private func runPass1(ffmpegURL: URL, inputURL: URL) async throws -> LoudnormMeasurements {
+    private func runPass1(
+        ffmpegURL: URL,
+        inputURL: URL,
+        onProgress: (@Sendable (LoudnessNormalizationProgress) -> Void)?
+    ) async throws -> LoudnormMeasurements {
         let args = Self.pass1Arguments(inputURL: inputURL)
 
         let result = try await processRunner.run(
@@ -130,7 +175,8 @@ public struct AudioLoudnessNormalizer: AudioLoudnessNormalizing {
             arguments: args,
             environment: nil,
             workingDirectoryURL: nil,
-            maximumOutputBytes: 2 * 1024 * 1024
+            maximumOutputBytes: 2 * 1024 * 1024,
+            onStdoutLine: Self.progressLineHandler(passIndex: 0, onProgress: onProgress)
         )
 
         if result.exitCode != 0 {
@@ -145,7 +191,8 @@ public struct AudioLoudnessNormalizer: AudioLoudnessNormalizing {
         ffmpegURL: URL,
         inputURL: URL,
         outputURL: URL,
-        measurements: LoudnormMeasurements
+        measurements: LoudnormMeasurements,
+        onProgress: (@Sendable (LoudnessNormalizationProgress) -> Void)?
     ) async throws {
         let args = Self.pass2Arguments(inputURL: inputURL, outputURL: outputURL, measurements: measurements)
 
@@ -154,7 +201,8 @@ public struct AudioLoudnessNormalizer: AudioLoudnessNormalizing {
             arguments: args,
             environment: nil,
             workingDirectoryURL: nil,
-            maximumOutputBytes: 2 * 1024 * 1024
+            maximumOutputBytes: 2 * 1024 * 1024,
+            onStdoutLine: Self.progressLineHandler(passIndex: 1, onProgress: onProgress)
         )
 
         if result.exitCode != 0 {
@@ -190,5 +238,28 @@ public struct AudioLoudnessNormalizer: AudioLoudnessNormalizing {
             logger.error("Failed to decode loudnorm JSON: \(ErrorHandler.debugMessage(for: error), privacy: .private)")
             throw MinuteError.audioExportFailed
         }
+    }
+
+    private static func progressLineHandler(
+        passIndex: Int,
+        onProgress: (@Sendable (LoudnessNormalizationProgress) -> Void)?
+    ) -> (@Sendable (String) -> Void)? {
+        guard let onProgress else { return nil }
+        return { line in
+            guard let seconds = parseOutTimeSeconds(line) else { return }
+            onProgress(LoudnessNormalizationProgress(passIndex: passIndex, totalPasses: 2, processedSeconds: seconds))
+        }
+    }
+
+    /// Parses an ffmpeg `-progress` `out_time=HH:MM:SS.ffffff` line into seconds.
+    static func parseOutTimeSeconds(_ line: String) -> Double? {
+        guard line.hasPrefix("out_time=") else { return nil }
+        let value = line.dropFirst("out_time=".count).trimmingCharacters(in: .whitespaces)
+        let parts = value.split(separator: ":")
+        guard parts.count == 3,
+              let hours = Double(parts[0]),
+              let minutes = Double(parts[1]),
+              let seconds = Double(parts[2]) else { return nil }
+        return hours * 3600 + minutes * 60 + seconds
     }
 }

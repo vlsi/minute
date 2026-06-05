@@ -230,7 +230,8 @@ public actor MeetingPipelineCoordinator {
             try Task.checkCancellation()
 
             if context.normalizeAnalysisAudio {
-                progress?(.normalizingAudioLevels(fractionCompleted: 0.14))
+                let normalizeTotalSeconds = context.audioDurationSeconds
+                progress?(.normalizingAudioLevels(fractionCompleted: 0.0, processedSeconds: 0, totalSeconds: normalizeTotalSeconds))
                 let normalizationStartedAt = Date()
                 let inputName = context.audioTempURL.lastPathComponent
                 logger.info("Analysis audio normalization started [file=\(inputName, privacy: .public)]")
@@ -238,7 +239,15 @@ public actor MeetingPipelineCoordinator {
                 do {
                     let normalizedURL = try await audioLoudnessNormalizer.normalizeForAnalysis(
                         inputURL: context.audioTempURL,
-                        workingDirectoryURL: context.workingDirectoryURL
+                        workingDirectoryURL: context.workingDirectoryURL,
+                        onProgress: { update in
+                            let overall = update.overallFraction(totalSeconds: normalizeTotalSeconds)
+                            progress?(.normalizingAudioLevels(
+                                fractionCompleted: overall * 0.17,
+                                processedSeconds: overall * normalizeTotalSeconds,
+                                totalSeconds: normalizeTotalSeconds
+                            ))
+                        }
                     )
                     context.analysisAudioURL = normalizedURL
                     let elapsedSeconds = Date().timeIntervalSince(normalizationStartedAt)
