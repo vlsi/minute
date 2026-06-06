@@ -15,6 +15,7 @@
 </p>
 
 <p align="center">
+  <a href="#what-this-fork-adds">What This Fork Adds</a> •
   <a href="#key-features">Key Features</a> •
   <a href="#output-contract">Output Contract</a> •
   <a href="#how-to-build">How to Build</a> •
@@ -37,6 +38,17 @@ brew install --cask minute
 1. Download the latest DMG from GitHub Releases.
 2. Open the DMG and drag `Minute.app` into Applications.
 3. Launch Minute from Applications.
+
+## What this fork adds
+
+This is a personal fork of [`roblibob/minute`](https://github.com/roblibob/minute). It follows upstream and adds the changes below; offline Russian transcription is the main reason it exists.
+
+- **Russian transcription (GigaAM).** Adds a third transcription backend that handles Russian offline on Apple Silicon, running [GigaAM](https://github.com/salute-developers/GigaAM) through `sherpa-onnx`. Long recordings are split with Silero VAD and decoded per speech segment, so timestamps and speaker diarization stay intact. Pick the RNN-T or CTC variant in settings; model files download from Hugging Face and are checksum-verified, like the Whisper models. arm64, macOS 14+, Russian only.
+- **Live transcription progress.** The status drawer shows position, speed and ETA while transcribing, measured in decoded speech so skipped silence does not inflate the bar. Diarization gets its own "Identifying speakers" stage, and loudness normalization shows a moving bar instead of a static fraction.
+- **Faster Parakeet.** The Parakeet encoder runs on the GPU on Apple Silicon, about 8% faster with no accuracy change, and FluidAudio is pinned to v0.15.1 for the newer encoder and diarization model.
+- **Smaller vault audio.** Recordings are stored as M4A (AAC) by default instead of uncompressed WAV, roughly an order of magnitude smaller. Imports keep their original quality, and a separate 16 kHz WAV still drives transcription and diarization. Change the format under Settings → Vault → Audio format.
+- **Download sizes in the model pickers.** Each GigaAM and Whisper option shows its download size, both in settings and during onboarding.
+- **Unsigned DMG releases.** A manual GitHub Actions workflow builds an ad-hoc-signed, arm64-only DMG. There is no Apple Developer certificate, so the build is not notarized and the Sparkle updater is off; clear the download quarantine after installing. Homebrew and the signed releases still come from upstream.
 
 ## Key Features
 
