@@ -1,0 +1,124 @@
+name: Release (unsigned)
+
+# Build Minute and publish an unsigned, ad-hoc signed DMG to GitHub Releases.
+# Run it by hand from the Actions tab; there is no Apple Developer certificate,
+# so the app is not notarised and macOS quarantines it on download. The release
+# notes explain how users clear the quarantine.
+
+on:
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: "Mark the GitHub release as a pre-release"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select newest installed Xcode
+        run: |
+          set -euo pipefail
+          xcode_app="$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1 || true)"
+          if [ -z "$xcode_app" ]; then
+            echo "error: no Xcode found under /Applications" >&2
+            exit 1
+          fi
+          sudo xcode-select -s "$xcode_app/Contents/Developer"
+          xcodebuild -version
+
+      - name: Archive (ad-hoc signed, updater off)
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -workspace Minute.xcworkspace \
+            -scheme Minute \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -archivePath build/ci/Minute.xcarchive \
+            -derivedDataPath build/ci/dd \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=NO \
+            MINUTE_DISTRIBUTION_PROFILE=direct \
+            MINUTE_ENABLE_UPDATER=NO \
+            MINUTE_SU_FEED_URL="" \
+            MINUTE_SWIFT_DISTRIBUTION_FLAG=-DMINUTE_DISTRIBUTION_DIRECT \
+            MINUTE_APP_ENTITLEMENTS_FILE=Minute/Sources/App/Minute.entitlements \
+            MINUTE_HELPER_ENTITLEMENTS_FILE=Minute/Sources/App/MinuteHelper.entitlements \
+            MINUTE_WHISPER_SERVICE_ENTITLEMENTS=MinuteWhisperService/MinuteWhisperService.entitlements \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="-" \
+            DEVELOPMENT_TEAM="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=YES \
+            archive
+
+      - name: Package DMG
+        id: package
+        run: |
+          set -euo pipefail
+          app="build/ci/Minute.xcarchive/Products/Applications/Minute.app"
+          version="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$app/Contents/Info.plist")"
+          dmg="$(scripts/build-unsigned-dmg.sh build/ci/Minute.xcarchive dist)"
+          sha="$(shasum -a 256 "$dmg" | awk '{print $1}')"
+          {
+            echo "version=$version"
+            echo "tag=v$version"
+            echo "dmg=$dmg"
+            echo "sha256=$sha"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Write release notes
+        run: |
+          set -euo pipefail
+          cat > dist/release-notes.md <<EOF
+          ## Minute ${{ steps.package.outputs.version }} (unsigned build)
+
+          This build is ad-hoc signed but not notarised — there is no Apple Developer
+          certificate behind it. macOS Gatekeeper quarantines it on download, so the
+          first launch needs one extra step.
+
+          ### Install
+          1. Open \`Minute-${{ steps.package.outputs.version }}.dmg\` and drag \`Minute.app\` to \`Applications\`.
+          2. Clear the quarantine flag and open the app:
+             \`\`\`
+             xattr -dr com.apple.quarantine /Applications/Minute.app
+             open /Applications/Minute.app
+             \`\`\`
+             Or right-click \`Minute.app\` in Finder, choose **Open**, then confirm.
+
+          ### Notes
+          - Apple Silicon (arm64) only.
+          - Auto-update is disabled in these builds.
+
+          \`\`\`
+          SHA-256  ${{ steps.package.outputs.sha256 }}  Minute-${{ steps.package.outputs.version }}.dmg
+          \`\`\`
+          EOF
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${{ steps.package.outputs.tag }}"
+          prerelease_flag=""
+          if [ "${{ inputs.prerelease }}" = "true" ]; then
+            prerelease_flag="--prerelease"
+          fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "${{ steps.package.outputs.dmg }}" --clobber
+            gh release edit "$tag" --notes-file dist/release-notes.md $prerelease_flag
+          else
+            gh release create "$tag" "${{ steps.package.outputs.dmg }}" \
+              --title "Minute ${{ steps.package.outputs.version }}" \
+              --notes-file dist/release-notes.md \
+              $prerelease_flag
+          fi
